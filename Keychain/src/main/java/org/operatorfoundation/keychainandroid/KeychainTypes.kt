@@ -16,7 +16,7 @@ enum class KeyType(val value: Int) {
     P521Signing(8)
 }
 
-class KeyPair(privateKey: PrivateKey, publicKey: PublicKey)
+class KeyPair(val privateKey: PrivateKey, val publicKey: PublicKey)
 
 @Serializable
 sealed class PrivateKey {
