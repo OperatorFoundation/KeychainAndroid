@@ -13,6 +13,31 @@ import java.security.spec.PKCS8EncodedKeySpec
 class Keychain {
     lateinit var encryptedSharedPreferences: EncryptedSharedPreferences
 
+    fun generateEphemeralKeypair(type: KeyType): KeyPair? {
+        return try {
+            return if (type == KeyType.P256KeyAgreement) {
+                val parameterSpec = ECNamedCurveTable.getParameterSpec("secp256r1")
+                val keyPairGenerator = KeyPairGenerator.getInstance("EC", BouncyCastleProvider())
+                keyPairGenerator.initialize(parameterSpec)
+                val keyPair = keyPairGenerator.generateKeyPair()
+                val privateKey = keyPair.private
+                val publicKey = keyPair.public
+                val keychainPrivateKey = PrivateKey.P256KeyAgreement(privateKey)
+                val keychainPublicKey = PublicKey.P256KeyAgreement(publicKey)
+                KeyPair(keychainPrivateKey, keychainPublicKey)
+            } else {
+                println("Unsupported key type.  Returning null.")
+                null
+            }
+        } catch (e: NoSuchAlgorithmException) {
+            e.printStackTrace()
+            null
+        } catch (e: InvalidAlgorithmParameterException) {
+            e.printStackTrace()
+            null
+        }
+    }
+
     fun generateAndSavePrivateKey(label: String, type: KeyType): PrivateKey? {
         return try {
             return if (type == KeyType.P256KeyAgreement) {

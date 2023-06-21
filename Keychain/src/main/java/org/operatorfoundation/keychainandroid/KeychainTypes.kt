@@ -1,5 +1,6 @@
 package org.operatorfoundation.keychainandroid
 
+import android.annotation.SuppressLint
 import kotlinx.serialization.Serializable
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey
 
@@ -15,7 +16,8 @@ enum class KeyType(val value: Int) {
     P521Signing(8)
 }
 
-// TODO:  add way to return key as string representation for debugging
+class KeyPair(privateKey: PrivateKey, publicKey: PublicKey)
+
 @Serializable
 sealed class PrivateKey {
     class Curve25519KeyAgreement(val privateKey: java.security.PrivateKey): PrivateKey()
@@ -33,10 +35,11 @@ sealed class PrivateKey {
             is P256KeyAgreement -> this.privateKey
             else -> null
         }
-    if (privateKey == null) {
-        println("error: invalid key type.")
-        return ""
-    }
+
+        if (privateKey == null) {
+            println("error: invalid key type.")
+            return ""
+        }
 
     val privateKeyBytes = privateKey.encoded
         return bytesToHex(privateKeyBytes)
