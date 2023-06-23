@@ -55,12 +55,16 @@ sealed class PrivateKey {
 
 @Serializable
 sealed class PublicKey {
+    val data get() = when(this) {
+        is P256KeyAgreement -> publicKeyToBytes(this.publicKey)
+        else -> null
+    }
+    
     class Curve25519KeyAgreement(val publicKey: java.security.PublicKey): PublicKey()
     class P256KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey() {
         constructor(data: ByteArray): this(bytesToPublicKey(data))
-
-        val data get() = publicKeyToBytes(publicKey)
     }
+
     class P384KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey()
     class P521KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey()
 
