@@ -59,7 +59,7 @@ sealed class PublicKey {
         is P256KeyAgreement -> publicKeyToBytes(this.publicKey)
         else -> null
     }
-    
+
     class Curve25519KeyAgreement(val publicKey: java.security.PublicKey): PublicKey()
     class P256KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey() {
         constructor(data: ByteArray): this(bytesToPublicKey(data))
