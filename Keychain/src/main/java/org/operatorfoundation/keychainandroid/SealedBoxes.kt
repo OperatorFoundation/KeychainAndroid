@@ -8,14 +8,35 @@ import javax.crypto.Cipher
 import javax.crypto.NoSuchPaddingException
 import javax.crypto.spec.GCMParameterSpec
 
+enum class SealedBoxType(val value: Int) {
+    AESGCM(1)
+}
+
 sealed class SealedBox {
-    companion object
-    {
+    companion object {
         var tagSize = 16
         var tagSizeBits = tagSize * 8
         var lengthWithTagSize = 2 + tagSize
         var maxPayloadSize = 16417
         val handshakeSize = 64
+
+        fun seal(typeSelector: SealedBoxType, key: SymmetricKey, nonce: ByteArray, plaintext: ByteArray) : SealedBox
+        {
+            val result = when (typeSelector) {
+                SealedBoxType.AESGCM -> return AESGCM.seal(nonce, key, plaintext)
+            }
+
+            return result
+        }
+
+        fun open(typeSelector: SealedBoxType, key: SymmetricKey, nonce: ByteArray, ciphertext: ByteArray) : ByteArray
+        {
+            val result = when (typeSelector) {
+                SealedBoxType.AESGCM -> return AESGCM.open(nonce, key, ciphertext)
+            }
+
+            return result
+        }
     }
 
     class AESGCM(val nonce: ByteArray, val key: SymmetricKey, val ciphertext: ByteArray): SealedBox() {
@@ -47,24 +68,24 @@ sealed class SealedBox {
 
                 return AESGCM(nonce, key, ciphertext)
             }
-        }
 
-        fun open(key: SymmetricKey): ByteArray {
-            val ivSpec: AlgorithmParameterSpec
+            fun open(nonce: ByteArray, key: SymmetricKey, ciphertext: ByteArray): ByteArray {
+                val ivSpec: AlgorithmParameterSpec
 
-            ivSpec = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
-            {
-                AEADParameterSpec(nonce, tagSizeBits)
+                ivSpec = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
+                {
+                    AEADParameterSpec(nonce, tagSizeBits)
+                }
+                else
+                {
+                    GCMParameterSpec(tagSizeBits, nonce)
+                }
+
+                lateinit var cipher: Cipher
+                cipher.init(Cipher.DECRYPT_MODE, key.secretKey, ivSpec)
+
+                return cipher.doFinal(ciphertext)
             }
-            else
-            {
-                GCMParameterSpec(tagSizeBits, nonce)
-            }
-
-            lateinit var cipher: Cipher
-            cipher.init(Cipher.DECRYPT_MODE, key.secretKey, ivSpec)
-
-            return cipher.doFinal(ciphertext)
         }
 
 //        constructor(val data: ByteArray) {
