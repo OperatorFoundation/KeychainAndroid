@@ -20,8 +20,6 @@ sealed class SealedBox {
 
     class AESGCM(val nonce: ByteArray, val key: SymmetricKey, val ciphertext: ByteArray): SealedBox() {
         companion object {
-            lateinit var cipher: Cipher
-
             fun seal(nonce: ByteArray, key: SymmetricKey, dataToSeal: ByteArray): SealedBox {
                 val ivSpec: AlgorithmParameterSpec
 
@@ -30,6 +28,9 @@ sealed class SealedBox {
                 } else {
                     GCMParameterSpec(tagSizeBits, nonce)
                 }
+
+                lateinit var cipher: Cipher
+                cipher.init(Cipher.DECRYPT_MODE, key.secretKey, ivSpec)
 
                 cipher = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
                 {
@@ -60,6 +61,7 @@ sealed class SealedBox {
                 GCMParameterSpec(tagSizeBits, nonce)
             }
 
+            lateinit var cipher: Cipher
             cipher.init(Cipher.DECRYPT_MODE, key.secretKey, ivSpec)
 
             return cipher.doFinal(ciphertext)
