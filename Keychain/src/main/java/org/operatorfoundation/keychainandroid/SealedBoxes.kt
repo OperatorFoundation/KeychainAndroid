@@ -9,7 +9,7 @@ import javax.crypto.NoSuchPaddingException
 import javax.crypto.spec.GCMParameterSpec
 
 enum class SealedBoxType(val value: Int) {
-    AESGCM(1)
+    AESGCM(2)
 }
 
 sealed class SealedBox {
