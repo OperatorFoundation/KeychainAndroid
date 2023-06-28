@@ -51,7 +51,6 @@ sealed class SealedBox {
                 }
 
                 lateinit var cipher: Cipher
-                cipher.init(Cipher.DECRYPT_MODE, key.secretKey, ivSpec)
 
                 cipher = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
                 {
@@ -61,7 +60,6 @@ sealed class SealedBox {
                 {
                     Cipher.getInstance("AES_256/GCM/NoPadding")
                 }
-
                 cipher.init(Cipher.ENCRYPT_MODE, key.secretKey, ivSpec)
 
                 val ciphertext = cipher.doFinal(dataToSeal)
@@ -82,6 +80,15 @@ sealed class SealedBox {
                 }
 
                 lateinit var cipher: Cipher
+
+                cipher = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
+                {
+                    Cipher.getInstance("AES/GCM/NoPadding", BouncyCastleProvider())
+                }
+                else
+                {
+                    Cipher.getInstance("AES_256/GCM/NoPadding")
+                }
                 cipher.init(Cipher.DECRYPT_MODE, key.secretKey, ivSpec)
 
                 return cipher.doFinal(ciphertext)
