@@ -20,7 +20,7 @@ sealed class SealedBox {
         var maxPayloadSize = 16417
         val handshakeSize = 64
 
-        fun seal(typeSelector: SealedBoxType, key: SymmetricKey, nonce: ByteArray, plaintext: ByteArray) : SealedBox
+        fun seal(typeSelector: SealedBoxType, key: SymmetricKey, nonce: ByteArray, plaintext: ByteArray) : ByteArray
         {
             val result = when (typeSelector) {
                 SealedBoxType.AESGCM -> return AESGCM.seal(nonce, key, plaintext)
@@ -41,7 +41,7 @@ sealed class SealedBox {
 
     class AESGCM(val nonce: ByteArray, val key: SymmetricKey, val ciphertext: ByteArray): SealedBox() {
         companion object {
-            fun seal(nonce: ByteArray, key: SymmetricKey, dataToSeal: ByteArray): SealedBox {
+            fun seal(nonce: ByteArray, key: SymmetricKey, dataToSeal: ByteArray): ByteArray {
                 val ivSpec: AlgorithmParameterSpec
 
                 ivSpec = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
@@ -64,7 +64,7 @@ sealed class SealedBox {
 
                 val ciphertext = cipher.doFinal(dataToSeal)
 
-                return AESGCM(nonce, key, ciphertext)
+                return ciphertext
             }
 
             fun open(nonce: ByteArray, key: SymmetricKey, ciphertext: ByteArray): ByteArray {
