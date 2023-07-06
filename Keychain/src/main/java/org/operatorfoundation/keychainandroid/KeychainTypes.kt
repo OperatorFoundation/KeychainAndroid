@@ -27,14 +27,22 @@ class KeyPair(val privateKey: PrivateKey, val publicKey: PublicKey)
 
 @Serializable
 sealed class PrivateKey {
+    @Serializable
     class Curve25519KeyAgreement(val privateKey: java.security.PrivateKey): PrivateKey()
+    @Serializable
     class P256KeyAgreement(val privateKey: java.security.PrivateKey) : PrivateKey()
+    @Serializable
     class P384KeyAgreement(val privateKey: java.security.PrivateKey) : PrivateKey()
+    @Serializable
     class P521KeyAgreement(val privateKey: java.security.PrivateKey) : PrivateKey()
 
+    @Serializable
     class Curve25519Signing(val privateKey: java.security.PrivateKey) : PrivateKey()
+    @Serializable
     class P256Signing(val privateKey: java.security.PrivateKey) : PrivateKey()
+    @Serializable
     class P384Signing(val privateKey: java.security.PrivateKey) : PrivateKey()
+    @Serializable
     class P521Signing(val privateKey: java.security.PrivateKey) : PrivateKey()
 
     override fun toString(): String {
@@ -48,7 +56,7 @@ sealed class PrivateKey {
             return ""
         }
 
-        val privateKeyBytes = privateKey.encoded
+            val privateKeyBytes = privateKey.encoded
             return bytesToHex(privateKeyBytes)
         }
 }
@@ -60,17 +68,25 @@ sealed class PublicKey {
         else -> null
     }
 
+    @Serializable
     class Curve25519KeyAgreement(val publicKey: java.security.PublicKey): PublicKey()
+    @Serializable
     class P256KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey() {
         constructor(data: ByteArray): this(bytesToPublicKey(data))
     }
 
+    @Serializable
     class P384KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey()
+    @Serializable
     class P521KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey()
 
+    @Serializable
     class Curve25519Signing(val publicKey: java.security.PublicKey) : PublicKey()
+    @Serializable
     class P256Signing(val publicKey: java.security.PublicKey) : PublicKey()
+    @Serializable
     class P384Signing(val publicKey: java.security.PublicKey) : PublicKey()
+    @Serializable
     class P521Signing(val publicKey: java.security.PublicKey) : PublicKey()
 
     companion object {
