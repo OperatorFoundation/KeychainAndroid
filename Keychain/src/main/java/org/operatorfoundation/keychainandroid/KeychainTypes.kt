@@ -71,8 +71,6 @@ sealed class PublicKey {
 
     class P256KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey() {
         constructor(data: ByteArray): this(bytesToPublicKey(data))
-
-
     }
 
 
