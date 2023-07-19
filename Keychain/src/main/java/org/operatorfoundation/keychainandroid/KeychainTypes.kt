@@ -1,6 +1,6 @@
 package org.operatorfoundation.keychainandroid
 
-import android.annotation.SuppressLint
+import android.util.Base64
 import kotlinx.serialization.Serializable
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey
 import org.bouncycastle.jce.ECNamedCurveTable
@@ -27,22 +27,21 @@ class KeyPair(val privateKey: PrivateKey, val publicKey: PublicKey)
 
 @Serializable
 sealed class PrivateKey {
-    @Serializable
+
     class Curve25519KeyAgreement(val privateKey: java.security.PrivateKey): PrivateKey()
-    @Serializable
+
     class P256KeyAgreement(val privateKey: java.security.PrivateKey) : PrivateKey()
-    @Serializable
+
     class P384KeyAgreement(val privateKey: java.security.PrivateKey) : PrivateKey()
-    @Serializable
+
     class P521KeyAgreement(val privateKey: java.security.PrivateKey) : PrivateKey()
 
-    @Serializable
     class Curve25519Signing(val privateKey: java.security.PrivateKey) : PrivateKey()
-    @Serializable
+
     class P256Signing(val privateKey: java.security.PrivateKey) : PrivateKey()
-    @Serializable
+
     class P384Signing(val privateKey: java.security.PrivateKey) : PrivateKey()
-    @Serializable
+    
     class P521Signing(val privateKey: java.security.PrivateKey) : PrivateKey()
 
     override fun toString(): String {
@@ -57,36 +56,37 @@ sealed class PrivateKey {
         }
 
             val privateKeyBytes = privateKey.encoded
-            return bytesToHex(privateKeyBytes)
+            return Base64.encodeToString(privateKeyBytes, Base64.DEFAULT)
         }
 }
 
-@Serializable
+@Serializable(with = PublicKeyAsStringSerializer::class)
 sealed class PublicKey {
     val data get() = when(this) {
         is P256KeyAgreement -> publicKeyToBytes(this.publicKey)
         else -> null
     }
 
-    @Serializable
     class Curve25519KeyAgreement(val publicKey: java.security.PublicKey): PublicKey()
-    @Serializable
+
     class P256KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey() {
         constructor(data: ByteArray): this(bytesToPublicKey(data))
+
+
     }
 
-    @Serializable
+
     class P384KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey()
-    @Serializable
+
     class P521KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey()
 
-    @Serializable
+
     class Curve25519Signing(val publicKey: java.security.PublicKey) : PublicKey()
-    @Serializable
+
     class P256Signing(val publicKey: java.security.PublicKey) : PublicKey()
-    @Serializable
+
     class P384Signing(val publicKey: java.security.PublicKey) : PublicKey()
-    @Serializable
+
     class P521Signing(val publicKey: java.security.PublicKey) : PublicKey()
 
     companion object {
@@ -135,20 +135,20 @@ sealed class PublicKey {
         val encodedPoint = point.getEncoded(true)
         val result = ByteArray(33)
         System.arraycopy(encodedPoint, 1, result, 0, 33)
-        return bytesToHex(result)
+        return Base64.encodeToString(result, Base64.DEFAULT)
     }
 }
 
-fun bytesToHex(data: ByteArray): String
-{
-    val hexArray = "0123456789ABCDEF".toCharArray()
-
-    val hexChars = CharArray(data.size * 2)
-    for (j in data.indices) {
-        val v = data[j].toInt() and 0xFF
-
-        hexChars[j * 2] = hexArray[v ushr 4]
-        hexChars[j * 2 + 1] = hexArray[v and 0x0F]
-    }
-    return String(hexChars)
-}
+//fun bytesToHex(data: ByteArray): String
+//{
+//    val hexArray = "0123456789ABCDEF".toCharArray()
+//
+//    val hexChars = CharArray(data.size * 2)
+//    for (j in data.indices) {
+//        val v = data[j].toInt() and 0xFF
+//
+//        hexChars[j * 2] = hexArray[v ushr 4]
+//        hexChars[j * 2 + 1] = hexArray[v and 0x0F]
+//    }
+//    return String(hexChars)
+//}

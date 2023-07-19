@@ -1,17 +1,26 @@
 package org.operatorfoundation.keychainandroid
 
 import org.junit.Test
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
 
-import org.junit.Assert.*
-
-/**
- * Example local unit test, which will execute on the development machine (host).
- *
- * See [testing documentation](http://d.android.com/tools/testing).
- */
 class ExampleUnitTest {
     @Test
-    fun addition_isCorrect() {
-        assertEquals(4, 2 + 2)
+    fun testSerializeKeyPair() {
+        val keyPair = Keychain().generateEphemeralKeypair(KeyType.P256KeyAgreement)
+
+        val bos = ByteArrayOutputStream()
+        val oos = ObjectOutputStream(bos)
+        val bytes = bos.toByteArray()
+        val bis = ByteArrayInputStream(bytes)
+        val ois = ObjectInputStream(bis)
+
+        oos.writeObject(keyPair!!.publicKey)
+        oos.flush()
+
+        val clone = ois.readObject() as PublicKey
+        println(clone.toString())
     }
 }
