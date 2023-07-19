@@ -73,11 +73,9 @@ sealed class PublicKey {
         constructor(data: ByteArray): this(bytesToPublicKey(data))
     }
 
-
     class P384KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey()
 
     class P521KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey()
-
 
     class Curve25519Signing(val publicKey: java.security.PublicKey) : PublicKey()
 
@@ -99,7 +97,7 @@ sealed class PublicKey {
             val keyFactory = KeyFactory.getInstance("EC", BouncyCastleProvider())
             val ecSpec: ECParameterSpec = ECNamedCurveTable.getParameterSpec("secp256r1")
             val encodedPoint = ByteArray(33)
-            System.arraycopy(bytes, 0, encodedPoint, 1, 33)
+            System.arraycopy(bytes, 0, encodedPoint, 1, 32)
             encodedPoint[0] = 3
             val point = ecSpec.curve.decodePoint(encodedPoint)
             val pubSpec = ECPublicKeySpec(point, ecSpec)
@@ -112,7 +110,7 @@ sealed class PublicKey {
             val point = bcecPublicKey.q
             val encodedPoint = point.getEncoded(true)
             val result = ByteArray(33)
-            System.arraycopy(encodedPoint, 1, result, 0, 33)
+            System.arraycopy(encodedPoint, 1, result, 0, 32)
 
             return result
         }
@@ -132,7 +130,7 @@ sealed class PublicKey {
         val point = bcecPublicKey.q
         val encodedPoint = point.getEncoded(true)
         val result = ByteArray(33)
-        System.arraycopy(encodedPoint, 1, result, 0, 33)
+        System.arraycopy(encodedPoint, 1, result, 0, 32)
         return Base64.encodeToString(result, Base64.DEFAULT)
     }
 }
