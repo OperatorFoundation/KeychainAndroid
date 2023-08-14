@@ -66,7 +66,8 @@ class Keychain {
         }
         return if (type == KeyType.P256KeyAgreement) {
             val keyFactory = KeyFactory.getInstance("EC", BouncyCastleProvider())
-            val privateKeyBytes = Base64.decode(privateKeyString, Base64.DEFAULT)
+            val privateKeyBytesWithType = Base64.decode(privateKeyString, Base64.DEFAULT)
+            val privateKeyBytes = privateKeyBytesWithType.sliceArray(1..32)
             val spec = PKCS8EncodedKeySpec(privateKeyBytes)
             val privateKey = keyFactory.generatePrivate(spec)
             PrivateKey.P256KeyAgreement(privateKey)
@@ -107,7 +108,8 @@ class Keychain {
         } ?: return false
 
         // TODO: Verify that .encoded is correct
-        val privateKeyString = Base64.encodeToString(privateKey.encoded, Base64.DEFAULT)
+        val keyType = byteArrayOf(KeyType.P256KeyAgreement.value.toByte())
+        val privateKeyString = Base64.encodeToString(keyType + privateKey.encoded, Base64.DEFAULT)
         encryptedSharedPreferences
             .edit()
             .putString(label, privateKeyString)

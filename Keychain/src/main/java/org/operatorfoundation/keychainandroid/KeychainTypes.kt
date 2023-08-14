@@ -116,7 +116,8 @@ sealed class PublicKey {
         }
     }
 
-    override fun toString(): String {
+    // this encodes a public key in a way that can be decoded back into a public key
+    fun encodeToString(): String {
         val publicKey = when(this) {
             is P256KeyAgreement -> this.publicKey
             else -> null
@@ -132,6 +133,11 @@ sealed class PublicKey {
         val result = ByteArray(33)
         System.arraycopy(encodedPoint, 1, result, 0, 32)
         return Base64.encodeToString(result, Base64.DEFAULT)
+    }
+
+    // toString is normally used for debugging.  Call encodeToString for a properly formatted string representation
+    override fun toString(): String {
+        return encodeToString()
     }
 }
 

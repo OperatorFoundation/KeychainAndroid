@@ -13,7 +13,7 @@ object PublicKeyAsStringSerializer : KSerializer<PublicKey> {
 
     // make value into string
     override fun serialize(encoder: Encoder, value: PublicKey) {
-        val string = value.toString()
+        val string = value.encodeToString()
         encoder.encodeString(string)
     }
 

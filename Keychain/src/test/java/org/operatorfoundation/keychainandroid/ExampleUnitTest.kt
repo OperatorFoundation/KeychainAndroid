@@ -21,6 +21,6 @@ class ExampleUnitTest {
         oos.flush()
 
         val clone = ois.readObject() as PublicKey
-        println(clone.toString())
+        println(clone.encodeToString())
     }
 }
