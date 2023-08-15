@@ -22,20 +22,16 @@ sealed class SealedBox {
 
         fun seal(typeSelector: SealedBoxType, key: SymmetricKey, nonce: ByteArray, plaintext: ByteArray) : ByteArray
         {
-            val result = when (typeSelector) {
+            when (typeSelector) {
                 SealedBoxType.AESGCM -> return AESGCM.seal(nonce, key, plaintext)
             }
-
-            return result
         }
 
         fun open(typeSelector: SealedBoxType, key: SymmetricKey, nonce: ByteArray, ciphertext: ByteArray) : ByteArray
         {
-            val result = when (typeSelector) {
+            when (typeSelector) {
                 SealedBoxType.AESGCM -> return AESGCM.open(nonce, key, ciphertext)
             }
-
-            return result
         }
     }
 

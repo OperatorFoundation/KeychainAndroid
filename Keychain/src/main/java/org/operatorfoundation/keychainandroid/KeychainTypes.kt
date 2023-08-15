@@ -10,6 +10,7 @@ import org.bouncycastle.jce.spec.ECPublicKeySpec
 import java.security.KeyFactory
 import java.security.NoSuchAlgorithmException
 import java.security.spec.InvalidKeySpecException
+import java.sql.Types
 
 enum class KeyType(val value: Int) {
     Curve25519KeyAgreement(1),
@@ -20,7 +21,17 @@ enum class KeyType(val value: Int) {
     Curve25519Signing(5),
     P256Signing(6),
     P384Signing(7),
-    P521Signing(8)
+    P521Signing(8);
+
+    companion object
+    {
+        fun fromInt(value: Int): KeyType
+        {
+            return KeyType.values().first { thisKeyType: KeyType ->
+                thisKeyType.value == value
+            }
+        }
+    }
 }
 
 class KeyPair(val privateKey: PrivateKey, val publicKey: PublicKey)
