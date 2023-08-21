@@ -99,6 +99,15 @@ sealed class PublicKey {
     class P521Signing(val publicKey: java.security.PublicKey) : PublicKey()
 
     companion object {
+        fun new(typedData: ByteArray): PublicKey {
+            val typeByte = typedData[0]
+            val keyType = KeyType.fromInt(typeByte.toInt())
+            when(keyType) {
+                KeyType.P256KeyAgreement -> return P256KeyAgreement(bytesToPublicKey(typedData))
+                else -> throw Exception("Unsupported KeyType")
+            }
+        }
+
         @Throws(NoSuchAlgorithmException::class, InvalidKeySpecException::class)
         fun bytesToPublicKey(bytes: ByteArray): java.security.PublicKey
         {
