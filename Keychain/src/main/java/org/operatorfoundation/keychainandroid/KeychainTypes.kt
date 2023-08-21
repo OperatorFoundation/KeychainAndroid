@@ -121,7 +121,16 @@ sealed class PublicKey {
             val point = bcecPublicKey.q
             val encodedPoint = point.getEncoded(true)
             val result = ByteArray(33)
-            System.arraycopy(encodedPoint, 1, result, 0, 32)
+            System.arraycopy(encodedPoint, 1, result, 1, 32)
+            result[0] = KeyType.P256KeyAgreement.value.toByte()
+
+            return result
+        }
+
+        fun publicKeyToBytesDarkstarFormat(pubKey: java.security.PublicKey?): ByteArray {
+            val keyBytes = publicKeyToBytes(pubKey)
+            val result = ByteArray(32)
+            System.arraycopy(keyBytes, 1, result, 0, 32)
 
             return result
         }
