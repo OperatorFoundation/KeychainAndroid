@@ -7,6 +7,8 @@ import org.bouncycastle.jce.ECNamedCurveTable
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.jce.spec.ECParameterSpec
 import org.bouncycastle.jce.spec.ECPublicKeySpec
+import java.lang.Error
+import java.lang.Exception
 import java.security.KeyFactory
 import java.security.NoSuchAlgorithmException
 import java.security.spec.InvalidKeySpecException
@@ -116,6 +118,19 @@ sealed class PublicKey {
             return keyFactory.generatePublic(pubSpec)
         }
 
+        fun bytesToPublicKeyDarkstarFormat(bytes: ByteArray): PublicKey {
+            if (bytes.size != 32)
+            {
+                throw InvalidKeySpecException()
+            }
+
+            val buffer = ByteArray(33)
+            System.arraycopy(bytes, 0, buffer, 1, 32)
+            buffer[0] = KeyType.P256KeyAgreement.value.toByte()
+
+            return P256KeyAgreement(bytesToPublicKey(buffer))
+        }
+
         fun publicKeyToBytes(pubKey: java.security.PublicKey?): ByteArray {
             val bcecPublicKey = pubKey as BCECPublicKey
             val point = bcecPublicKey.q
@@ -127,8 +142,12 @@ sealed class PublicKey {
             return result
         }
 
-        fun publicKeyToBytesDarkstarFormat(pubKey: java.security.PublicKey?): ByteArray {
-            val keyBytes = publicKeyToBytes(pubKey)
+        fun publicKeyToBytesDarkstarFormat(pubKey: PublicKey): ByteArray {
+            val keyBytes = pubKey.data
+            if (keyBytes == null) {
+                throw Exception("wrong key type.  Expected P256KeyAgreement")
+            }
+
             val result = ByteArray(32)
             System.arraycopy(keyBytes, 1, result, 0, 32)
 
