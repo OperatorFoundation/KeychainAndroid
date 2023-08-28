@@ -99,7 +99,7 @@ sealed class PublicKey {
     class P521Signing(val publicKey: java.security.PublicKey) : PublicKey()
 
     companion object {
-        val x936FormatByte: Byte = 4
+        val x936FormatByte: Byte = 3
         fun new(typedData: ByteArray): PublicKey {
             val typeByte = typedData[0]
             val keyType = KeyType.fromInt(typeByte.toInt())
