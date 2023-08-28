@@ -111,6 +111,7 @@ sealed class PublicKey {
         @Throws(NoSuchAlgorithmException::class, InvalidKeySpecException::class)
         fun bytesToPublicKey(bytes: ByteArray): java.security.PublicKey
         {
+            println("bytesToPublicKey bytes: " + bytes.toHex())
             if (bytes.size != 33) // This is the 33 byte key with a [0] notating the key's type and [1..] being the 32 byte key
             {
                 throw InvalidKeySpecException()
