@@ -99,6 +99,7 @@ sealed class PublicKey {
     class P521Signing(val publicKey: java.security.PublicKey) : PublicKey()
 
     companion object {
+        val x936FormatByte: Byte = 4
         fun new(typedData: ByteArray): PublicKey {
             val typeByte = typedData[0]
             val keyType = KeyType.fromInt(typeByte.toInt())
@@ -121,7 +122,7 @@ sealed class PublicKey {
             val ecSpec: ECParameterSpec = ECNamedCurveTable.getParameterSpec("secp256r1")
             val encodedPoint = ByteArray(33)
             System.arraycopy(bytes, 0, encodedPoint, 1, 32)
-            encodedPoint[0] = 3
+            encodedPoint[0] = PublicKey.x936FormatByte
             val point = ecSpec.curve.decodePoint(encodedPoint)
             val pubSpec = ECPublicKeySpec(point, ecSpec)
 
