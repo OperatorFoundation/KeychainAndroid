@@ -108,6 +108,15 @@ sealed class PublicKey {
                 else -> throw Exception("Unsupported KeyType")
             }
         }
+        
+        fun newDarkStarFormat(typedData: ByteArray): PublicKey {
+            val typeByte = typedData[0]
+            val keyType = KeyType.fromInt(typeByte.toInt())
+            when(keyType) {
+                KeyType.P256KeyAgreement -> return bytesToPublicKeyDarkstarFormat(typedData)
+                else -> throw Exception("Unsupported KeyType")
+            }
+        }
 
         @Throws(NoSuchAlgorithmException::class, InvalidKeySpecException::class)
         fun bytesToPublicKey(bytes: ByteArray): java.security.PublicKey
