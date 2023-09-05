@@ -23,4 +23,11 @@ class ExampleUnitTest {
         val clone = ois.readObject() as PublicKey
         println(clone.encodeToString())
     }
+
+    @Test
+    fun testNewDarkStarFormat() {
+        val keyHexString = ""
+        val keyHex = keyHexString.decodeHex()
+        PublicKey.newDarkStarFormat(keyHex)
+    }
 }

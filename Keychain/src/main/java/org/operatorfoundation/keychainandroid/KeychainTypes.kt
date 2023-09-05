@@ -112,8 +112,10 @@ sealed class PublicKey {
         fun newDarkStarFormat(typedData: ByteArray): PublicKey {
             val typeByte = typedData[0]
             val keyType = KeyType.fromInt(typeByte.toInt())
+            val result = ByteArray(32)
+            System.arraycopy(typedData, 1, result, 0, 32)
             when(keyType) {
-                KeyType.P256KeyAgreement -> return bytesToPublicKeyDarkstarFormat(typedData)
+                KeyType.P256KeyAgreement -> return bytesToPublicKeyDarkstarFormat(result)
                 else -> throw Exception("Unsupported KeyType")
             }
         }
