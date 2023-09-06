@@ -7,12 +7,10 @@ import org.bouncycastle.jce.ECNamedCurveTable
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.jce.spec.ECParameterSpec
 import org.bouncycastle.jce.spec.ECPublicKeySpec
-import java.lang.Error
 import java.lang.Exception
 import java.security.KeyFactory
 import java.security.NoSuchAlgorithmException
 import java.security.spec.InvalidKeySpecException
-import java.sql.Types
 
 enum class KeyType(val value: Int) {
     Curve25519KeyAgreement(1),
@@ -76,52 +74,41 @@ sealed class PrivateKey {
 @Serializable(with = PublicKeyAsStringSerializer::class)
 sealed class PublicKey {
     val data get() = when(this) {
-        is P256KeyAgreement -> publicKeyToBytes(this.publicKey)
+        is P256KeyAgreement -> javaPublicKeyToKeychainBytes(this.javaPublicKey)
         else -> null
     }
 
-    class Curve25519KeyAgreement(val publicKey: java.security.PublicKey): PublicKey()
+    class Curve25519KeyAgreement(val javaPublicKey: java.security.PublicKey): PublicKey()
 
-    class P256KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey() {
-        constructor(data: ByteArray): this(bytesToPublicKey(data))
+    class P256KeyAgreement(val javaPublicKey: java.security.PublicKey) : PublicKey() {
+        constructor(data: ByteArray): this(keychainBytesToJavaPublicKey(data))
     }
 
-    class P384KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey()
+    class P384KeyAgreement(val javaPublicKey: java.security.PublicKey) : PublicKey()
 
-    class P521KeyAgreement(val publicKey: java.security.PublicKey) : PublicKey()
+    class P521KeyAgreement(val javaPublicKey: java.security.PublicKey) : PublicKey()
 
-    class Curve25519Signing(val publicKey: java.security.PublicKey) : PublicKey()
+    class Curve25519Signing(val javaPublicKey: java.security.PublicKey) : PublicKey()
 
-    class P256Signing(val publicKey: java.security.PublicKey) : PublicKey()
+    class P256Signing(val javaPublicKey: java.security.PublicKey) : PublicKey()
 
-    class P384Signing(val publicKey: java.security.PublicKey) : PublicKey()
+    class P384Signing(val javaPublicKey: java.security.PublicKey) : PublicKey()
 
-    class P521Signing(val publicKey: java.security.PublicKey) : PublicKey()
+    class P521Signing(val javaPublicKey: java.security.PublicKey) : PublicKey()
 
     companion object {
         val x936FormatByte: Byte = 3
-        fun new(typedData: ByteArray): PublicKey {
+        fun new(typedData: ByteArray): org.operatorfoundation.keychainandroid.PublicKey {
             val typeByte = typedData[0]
             val keyType = KeyType.fromInt(typeByte.toInt())
             when(keyType) {
-                KeyType.P256KeyAgreement -> return P256KeyAgreement(bytesToPublicKey(typedData))
-                else -> throw Exception("Unsupported KeyType")
-            }
-        }
-        
-        fun newDarkStarFormat(typedData: ByteArray): PublicKey {
-            val typeByte = typedData[0]
-            val keyType = KeyType.fromInt(typeByte.toInt())
-            val result = ByteArray(32)
-            System.arraycopy(typedData, 1, result, 0, 32)
-            when(keyType) {
-                KeyType.P256KeyAgreement -> return bytesToPublicKeyDarkstarFormat(result)
+                KeyType.P256KeyAgreement -> return P256KeyAgreement(typedData)
                 else -> throw Exception("Unsupported KeyType")
             }
         }
 
         @Throws(NoSuchAlgorithmException::class, InvalidKeySpecException::class)
-        fun bytesToPublicKey(bytes: ByteArray): java.security.PublicKey
+        fun keychainBytesToJavaPublicKey(bytes: ByteArray): java.security.PublicKey
         {
             println("bytesToPublicKey bytes: " + bytes.toHex())
             if (bytes.size != 33) // This is the 33 byte key with a [0] notating the key's type and [1..] being the 32 byte key
@@ -140,20 +127,7 @@ sealed class PublicKey {
             return keyFactory.generatePublic(pubSpec)
         }
 
-        fun bytesToPublicKeyDarkstarFormat(bytes: ByteArray): PublicKey {
-            if (bytes.size != 32)
-            {
-                throw InvalidKeySpecException()
-            }
-
-            val buffer = ByteArray(33)
-            System.arraycopy(bytes, 0, buffer, 1, 32)
-            buffer[0] = KeyType.P256KeyAgreement.value.toByte()
-
-            return P256KeyAgreement(bytesToPublicKey(buffer))
-        }
-
-        fun publicKeyToBytes(pubKey: java.security.PublicKey?): ByteArray {
+        fun javaPublicKeyToKeychainBytes(pubKey: java.security.PublicKey?): ByteArray {
             val bcecPublicKey = pubKey as BCECPublicKey
             val point = bcecPublicKey.q
             val encodedPoint = point.getEncoded(true)
@@ -163,24 +137,12 @@ sealed class PublicKey {
 
             return result
         }
-
-        fun publicKeyToBytesDarkstarFormat(pubKey: PublicKey): ByteArray {
-            val keyBytes = pubKey.data
-            if (keyBytes == null) {
-                throw Exception("wrong key type.  Expected P256KeyAgreement")
-            }
-
-            val result = ByteArray(32)
-            System.arraycopy(keyBytes, 1, result, 0, 32)
-
-            return result
-        }
     }
 
     // this encodes a public key in a way that can be decoded back into a public key
     fun encodeToString(): String {
         val publicKey = when(this) {
-            is P256KeyAgreement -> this.publicKey
+            is P256KeyAgreement -> this.javaPublicKey
             else -> null
         }
         if (publicKey == null) {

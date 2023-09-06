@@ -128,7 +128,7 @@ class Keychain {
                             val keyAgreement =
                                 KeyAgreement.getInstance("ECDH", BouncyCastleProvider())
                             keyAgreement.init(privateKey.privateKey)
-                            keyAgreement.doPhase(publicKey.publicKey, true)
+                            keyAgreement.doPhase(publicKey.javaPublicKey, true)
                             val secret = keyAgreement.generateSecret("secp256r1")
                             SymmetricKey(secret)
                         }

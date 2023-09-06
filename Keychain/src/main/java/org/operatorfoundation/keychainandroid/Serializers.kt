@@ -21,7 +21,7 @@ object PublicKeyAsStringSerializer : KSerializer<PublicKey> {
     override fun deserialize(decoder: Decoder): PublicKey {
         val string = decoder.decodeString()
         val bytes = Base64.decode(string, Base64.DEFAULT)
-        val publicKey = PublicKey.bytesToPublicKey(bytes)
+        val publicKey = PublicKey.keychainBytesToJavaPublicKey(bytes)
 
         // TODO: eventually make a check for key type when we add more
         return PublicKey.P256KeyAgreement(publicKey)
