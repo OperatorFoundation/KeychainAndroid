@@ -120,6 +120,7 @@ sealed class PublicKey {
             val ecSpec: ECParameterSpec = ECNamedCurveTable.getParameterSpec("secp256r1")
             val encodedPoint = ByteArray(33)
             System.arraycopy(bytes, 0, encodedPoint, 1, 32)
+            println("removing identifier byte from key!")
             encodedPoint[0] = PublicKey.x936FormatByte
             val point = ecSpec.curve.decodePoint(encodedPoint)
             val pubSpec = ECPublicKeySpec(point, ecSpec)
@@ -133,6 +134,7 @@ sealed class PublicKey {
             val encodedPoint = point.getEncoded(true)
             val result = ByteArray(33)
             System.arraycopy(encodedPoint, 1, result, 1, 32)
+            println("adding identifier byte to key!")
             result[0] = KeyType.P256KeyAgreement.value.toByte()
 
             return result
