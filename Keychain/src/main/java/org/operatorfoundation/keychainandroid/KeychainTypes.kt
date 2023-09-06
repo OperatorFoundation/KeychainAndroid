@@ -118,11 +118,10 @@ sealed class PublicKey {
 
             val keyFactory = KeyFactory.getInstance("EC", BouncyCastleProvider())
             val ecSpec: ECParameterSpec = ECNamedCurveTable.getParameterSpec("secp256r1")
-            val encodedPoint = ByteArray(33)
-            System.arraycopy(bytes, 0, encodedPoint, 1, 32)
+            bytes[0] = PublicKey.x936FormatByte
             println("removing identifier byte from key!")
-            encodedPoint[0] = PublicKey.x936FormatByte
-            val point = ecSpec.curve.decodePoint(encodedPoint)
+
+            val point = ecSpec.curve.decodePoint(bytes)
             val pubSpec = ECPublicKeySpec(point, ecSpec)
 
             return keyFactory.generatePublic(pubSpec)
@@ -133,12 +132,10 @@ sealed class PublicKey {
             val point = bcecPublicKey.q
             val encodedPoint = point.getEncoded(true)
             println("encoded point hex: ${encodedPoint.toHex()}")
-            val result = ByteArray(33)
-            System.arraycopy(encodedPoint, 1, result, 1, 32)
+            encodedPoint[0] = KeyType.P256KeyAgreement.value.toByte()
             println("adding identifier byte to key!")
-            result[0] = KeyType.P256KeyAgreement.value.toByte()
 
-            return result
+            return encodedPoint
         }
     }
 
