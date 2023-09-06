@@ -132,6 +132,7 @@ sealed class PublicKey {
             val bcecPublicKey = pubKey as BCECPublicKey
             val point = bcecPublicKey.q
             val encodedPoint = point.getEncoded(true)
+            println("encoded point hex: ${encodedPoint.toHex()}")
             val result = ByteArray(33)
             System.arraycopy(encodedPoint, 1, result, 1, 32)
             println("adding identifier byte to key!")
