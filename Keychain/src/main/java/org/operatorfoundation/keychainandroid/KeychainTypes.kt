@@ -111,17 +111,15 @@ sealed class PublicKey {
         fun keychainBytesToJavaPublicKey(bytes: ByteArray): java.security.PublicKey
         {
             println("bytesToPublicKey bytes: " + bytes.toHex())
-            if (bytes.size != 33) // This is the 33 byte key with a [0] notating the key's type and [1..] being the 32 byte key
+            if (bytes.size != 66) // This is the 33 byte key with a [0] notating the key's type and [1..] being the 32 byte key
             {
                 throw InvalidKeySpecException()
             }
 
             val keyFactory = KeyFactory.getInstance("EC", BouncyCastleProvider())
             val ecSpec: ECParameterSpec = ECNamedCurveTable.getParameterSpec("secp256r1")
-            bytes[0] = PublicKey.x936FormatByte
-            println("removing identifier byte from key!")
-
-            val point = ecSpec.curve.decodePoint(bytes)
+            val keyBytes = bytes.sliceArray(1 until bytes.size) // Remove our custom key type byte from the front
+            val point = ecSpec.curve.decodePoint(keyBytes)
             val pubSpec = ECPublicKeySpec(point, ecSpec)
 
             return keyFactory.generatePublic(pubSpec)
@@ -130,12 +128,14 @@ sealed class PublicKey {
         fun javaPublicKeyToKeychainBytes(pubKey: java.security.PublicKey?): ByteArray {
             val bcecPublicKey = pubKey as BCECPublicKey
             val point = bcecPublicKey.q
-            val encodedPoint = point.getEncoded(true)
+            val encodedPoint = point.getEncoded(false)
             println("encoded point hex: ${encodedPoint.toHex()}")
-            encodedPoint[0] = KeyType.P256KeyAgreement.value.toByte()
+
+            val keyType = byteArrayOf(KeyType.P256KeyAgreement.value.toByte())
             println("adding identifier byte to key!")
 
-            return encodedPoint
+            // Add our key type to the beginning of the key bytes (without replacing anything)
+            return keyType + encodedPoint
         }
     }
 
