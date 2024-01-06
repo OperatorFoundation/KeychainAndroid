@@ -1,5 +1,6 @@
 package org.operatorfoundation.keychainandroid
 
+import org.junit.Assert
 import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -22,5 +23,15 @@ class ExampleUnitTest {
 
         val clone = ois.readObject() as PublicKey
         println(clone.encodeToString())
+    }
+
+    @Test
+    fun testSignatureTypeFromByteArray()
+    {
+        val bytes = byteArrayOf(2.toByte())
+        val signatureTypeFromData = SignatureType.fromBytes(bytes)
+        val signatureTypeControl = SignatureType.P256
+
+        Assert.assertEquals(signatureTypeFromData, signatureTypeControl)
     }
 }
