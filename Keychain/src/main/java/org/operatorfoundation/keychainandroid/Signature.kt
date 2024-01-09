@@ -1,7 +1,5 @@
 package org.operatorfoundation.keychainandroid
 
-import java.security.Security
-
 enum class SignatureType(val value: Int)
 {
     P256(2),
@@ -34,15 +32,21 @@ enum class SignatureType(val value: Int)
         }
     }
 }
-sealed class Signature(val javaSignature: java.security.Signature)
+sealed class Signature(val data: ByteArray)
 {
+    class P256(data: ByteArray) : org.operatorfoundation.keychainandroid.Signature(data)
+//    class P384(val javaSignature: java.security.Signature) : org.operatorfoundation.keychainandroid.Signature()
+//    class P521(val javaSignature: java.security.Signature) : org.operatorfoundation.keychainandroid.Signature()
+
     val type: SignatureType get()
     {
-        TODO("Not yet implemented")
-        throw Exception("Not yet implemented")
-//        when(javaSignature.algorithm){
-//        }
+        when(this) {
+            is P256 -> return SignatureType.P256
+        }
     }
-//    abstract fun type(): SignatureType
-//    abstract fun data(): ByteArray
+
+    val typedData: ByteArray get()
+    {
+        return type.data + this.data
+    }
 }

@@ -7,10 +7,11 @@ import org.bouncycastle.jce.ECNamedCurveTable
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.jce.spec.ECParameterSpec
 import org.bouncycastle.jce.spec.ECPublicKeySpec
-import java.lang.Exception
 import java.security.KeyFactory
 import java.security.NoSuchAlgorithmException
+import java.security.Signature
 import java.security.spec.InvalidKeySpecException
+import kotlin.Exception
 
 enum class KeyType(val value: Int) {
     Curve25519KeyAgreement(1),
@@ -55,20 +56,44 @@ sealed class PrivateKey {
     
     class P521Signing(val privateKey: java.security.PrivateKey) : PrivateKey()
 
-    override fun toString(): String {
-        val privateKey = when(this) {
+    override fun toString(): String
+    {
+        val privateKey = when(this)
+        {
             is P256KeyAgreement -> this.privateKey
+            is P256Signing -> this.privateKey
             else -> null
         }
 
-        if (privateKey == null) {
+        if (privateKey == null)
+        {
             println("error: invalid key type.")
             return ""
         }
 
-            val privateKeyBytes = privateKey.encoded
-            return Base64.encodeToString(privateKeyBytes, Base64.DEFAULT)
+        val privateKeyBytes = privateKey.encoded
+        return Base64.encodeToString(privateKeyBytes, Base64.DEFAULT)
+    }
+
+    fun signatureForData(data: ByteArray): org.operatorfoundation.keychainandroid.Signature
+    {
+        val privateKey = when(this)
+        {
+            is P256Signing -> this.privateKey
+            else -> throw Exception("This key type does not support signing.")
         }
+
+        val signer = Signature.getInstance("SHA256withECDSA", BouncyCastleProvider())
+        signer.initSign(privateKey)
+        signer.update(data)
+        val signedData = signer.sign()
+
+        when(this)
+        {
+            is P256Signing -> return org.operatorfoundation.keychainandroid.Signature.P256(signedData)
+            else -> throw Exception("This key type does not support signing.")
+        }
+    }
 }
 
 @Serializable(with = PublicKeyAsStringSerializer::class)
@@ -137,6 +162,27 @@ sealed class PublicKey {
             // Add our key type to the beginning of the key bytes (without replacing anything)
             return keyType + encodedPoint
         }
+    }
+
+    fun isValidSignature(signature: org.operatorfoundation.keychainandroid.Signature, dataToVerify: ByteArray): Boolean
+    {
+        val signatureData = when(signature)
+        {
+            is org.operatorfoundation.keychainandroid.Signature.P256 -> this.data
+            else -> throw Exception("Unsupported signature type.")
+        }
+
+        val javaPublicKey = when(this)
+        {
+            is P256Signing -> this.javaPublicKey
+            else -> throw Exception("Unsupported public key type for signature checking.")
+        }
+
+        val signer = Signature.getInstance("SHA256withECDSA", BouncyCastleProvider())
+        signer.initVerify(javaPublicKey)
+        signer.update(dataToVerify)
+
+        return signer.verify(signatureData)
     }
 
     // this encodes a public key in a way that can be decoded back into a public key
