@@ -103,7 +103,7 @@ class Keychain {
 
     fun storePrivateKey(key: PrivateKey, label: String): Boolean {
         val privateKey = when(key) {
-            is PrivateKey.P256KeyAgreement -> key.privateKey
+            is PrivateKey.P256KeyAgreement -> key.javaPrivateKey
             else -> null
         } ?: return false
 
@@ -127,7 +127,7 @@ class Keychain {
                         is PublicKey.P256KeyAgreement -> {
                             val keyAgreement =
                                 KeyAgreement.getInstance("ECDH", BouncyCastleProvider())
-                            keyAgreement.init(privateKey.privateKey)
+                            keyAgreement.init(privateKey.javaPrivateKey)
                             keyAgreement.doPhase(publicKey.javaPublicKey, true)
                             val secret = keyAgreement.generateSecret("secp256r1")
                             SymmetricKey(secret)
