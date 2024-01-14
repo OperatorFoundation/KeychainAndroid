@@ -9,8 +9,11 @@ import java.io.ObjectOutputStream
 
 class ExampleUnitTest {
     @Test
-    fun testSerializeKeyPair() {
+    fun testSerializeKeyPair()
+    {
         val keyPair = Keychain().generateEphemeralKeypair(KeyType.P256KeyAgreement)
+
+        Assert.assertNotNull(keyPair)
 
         val bos = ByteArrayOutputStream()
         val oos = ObjectOutputStream(bos)
@@ -23,6 +26,24 @@ class ExampleUnitTest {
 
         val clone = ois.readObject() as PublicKey
         println(clone.encodeToString())
+    }
+
+    @Test
+    fun testP256KeyAgreementPublicKeyToString()
+    {
+        val keyPair = Keychain().generateEphemeralKeypair(KeyType.P256KeyAgreement)
+        Assert.assertNotNull(keyPair)
+        val publicKeyString = keyPair!!.publicKey.toString()
+        println("PublicKeyString: $publicKeyString")
+    }
+
+    @Test
+    fun testP256KeyAgreementPrivateKeyToKeychainString()
+    {
+        val keyPair = Keychain().generateEphemeralKeypair(KeyType.P256KeyAgreement)
+        Assert.assertNotNull(keyPair)
+        val privateKeyString = keyPair!!.privateKey.toKeychainString()
+        println("privateKeyString: $privateKeyString")
     }
 
     @Test
