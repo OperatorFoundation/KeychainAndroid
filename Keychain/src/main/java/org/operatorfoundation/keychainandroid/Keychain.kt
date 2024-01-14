@@ -8,7 +8,9 @@ import java.security.*
 import java.security.spec.PKCS8EncodedKeySpec
 import javax.crypto.KeyAgreement
 
-class Keychain {
+class Keychain
+{
+    // FIXME: This is not being initialized and will cause an exception when it is accessed.
     lateinit var encryptedSharedPreferences: EncryptedSharedPreferences
 
     fun generateEphemeralKeypair(type: KeyType): KeyPair? {
