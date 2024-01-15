@@ -22,10 +22,12 @@ import java.io.ObjectOutputStream
  */
 @RunWith(AndroidJUnit4::class)
 class ExampleInstrumentedTest {
+
+    val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+
     @Test
     fun useAppContext() {
         // Context of the app under test.
-        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
         assertEquals("org.operatorfoundation.keychainandroid", appContext.packageName)
     }
 
@@ -33,23 +35,52 @@ class ExampleInstrumentedTest {
     fun testJSONSerializePublicKey()
     {
         // FIXME: Failing to encode correctly
-        val keyPair = Keychain().generateEphemeralKeypair(KeyType.P256KeyAgreement)
-        assertNotNull(keyPair)
+        val keypair = Keychain(appContext).generateAndSaveKeyPair("keychaintest", KeyType.P256KeyAgreement)
+        assertNotNull(keypair)
+        val privateKeyA = keypair!!.privateKey
 
-        val publicKeyData = keyPair!!.publicKey.toKeychainString() // Base64 (2 newlines?)
+        println("-------------------")
+        val publicKeyKeychainStringA = privateKeyA.publicKey.toKeychainString() // Base64 (2 newlines?)
+        println("publicKeyKeychainString:")
+        println(publicKeyKeychainStringA)
 
-        val publicKeyJson = Json.encodeToString(publicKeyData) //JSON (Too many quotes)
+        val publicKeyJsonA = Json.encodeToString(publicKeyKeychainStringA) //JSON
+        println("publicKeyJson:")
+        println(publicKeyJsonA)
+        println("-------------------")
 
-        println("\n--> PublicKey as Json: \n$publicKeyJson")
+        val decodedKeyA: PublicKey = Json.decodeFromString(publicKeyJsonA) // Public Key
+        assert(privateKeyA.publicKey.type == decodedKeyA.type)
+        assert(privateKeyA.publicKey.javaPublicKey == decodedKeyA.javaPublicKey)
 
-        val decodedKey: PublicKey = Json.decodeFromString(publicKeyJson) // Public Key
-        assert(keyPair.publicKey == decodedKey)
+        val privateKeyB = Keychain(appContext).retrieveOrGeneratePrivateKey("keychaintest", KeyType.P256KeyAgreement)
+        assertNotNull(privateKeyB)
+
+        println("-------------------")
+        val publicKeyKeychainStringB = privateKeyB!!.publicKey.toKeychainString() // Base64 (2 newlines?)
+        println("publicKeyKeychainString:")
+        println(publicKeyKeychainStringB)
+
+        val publicKeyJsonB = Json.encodeToString(publicKeyKeychainStringB) //JSON
+        println("publicKeyJson:")
+        println(publicKeyJsonB)
+        println("-------------------")
+
+        val decodedKeyB: PublicKey = Json.decodeFromString(publicKeyJsonB) // Public Key
+
+        assert(privateKeyB.publicKey.type == decodedKeyB.type)
+        assert(privateKeyB.publicKey.javaPublicKey == decodedKeyB.javaPublicKey)
+
+        assert(privateKeyA.publicKey.type == privateKeyB.publicKey.type)
+        assert(decodedKeyA.type == decodedKeyB.type)
+        assert(decodedKeyA.javaPublicKey == decodedKeyB.javaPublicKey)
+        assert(privateKeyA.publicKey.javaPublicKey == privateKeyB.publicKey.javaPublicKey)
     }
 
     @Test
     fun testP256KeyAgreementPublicKeyToString()
     {
-        val keyPair = Keychain().generateEphemeralKeypair(KeyType.P256KeyAgreement)
+        val keyPair = Keychain(appContext).generateEphemeralKeypair(KeyType.P256KeyAgreement)
         Assert.assertNotNull(keyPair)
         val publicKeyString = keyPair!!.publicKey.toString()
         println("PublicKeyString: $publicKeyString")
@@ -58,9 +89,10 @@ class ExampleInstrumentedTest {
     @Test
     fun testP256KeyAgreementPrivateKeyToKeychainString()
     {
-        val keyPair = Keychain().generateEphemeralKeypair(KeyType.P256KeyAgreement)
+        val keyPair = Keychain(appContext).generateEphemeralKeypair(KeyType.P256KeyAgreement)
         Assert.assertNotNull(keyPair)
         val privateKeyString = keyPair!!.privateKey.toKeychainString()
         println("privateKeyString: $privateKeyString")
     }
+
 }

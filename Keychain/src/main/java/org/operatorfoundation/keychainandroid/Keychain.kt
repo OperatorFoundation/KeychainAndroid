@@ -1,14 +1,25 @@
 package org.operatorfoundation.keychainandroid
 
+import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import org.bouncycastle.jce.ECNamedCurveTable
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.*
 import javax.crypto.KeyAgreement
 
-class Keychain
+class Keychain(context: Context)
 {
-    lateinit var encryptedSharedPreferences: EncryptedSharedPreferences
+    private val masterKey = MasterKey.Builder(context.applicationContext)
+        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+        .build()
+
+    val encryptedSharedPreferences = EncryptedSharedPreferences.create(
+        context.applicationContext,
+        "KeychainEncryptedPreferences",
+        masterKey,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM)
 
     companion object
     {
@@ -27,7 +38,7 @@ class Keychain
         {
             when(type)
             {
-                // TODO: Differences in generating these types?
+                // FIXME: Differences in generating these types
                 KeyType.P256KeyAgreement -> generateP256KeyPair()
                 KeyType.P256Signing -> generateP256KeyPair()
             }
@@ -54,14 +65,17 @@ class Keychain
 
     fun retrievePrivateKey(label: String, type: KeyType): PrivateKey?
     {
-        val privateKeyString = encryptedSharedPreferences.getString(label+PrivateKey.encryptedPrefsLabel, null)
+        // FIXME: Ignoring provided label
+        val privateKeyString = encryptedSharedPreferences.getString(PrivateKey.encryptedPrefsLabel, null)
         if (privateKeyString == null) {
             println("Failed to retrieve a private key from encrypted shared preferences with provided label: $label")
             return null
         }
+        println("Retrieved a private key from storage: $privateKeyString")
         val javaPrivateKey = PrivateKey.keychainStringToJavaPrivateKey(privateKeyString)
 
-        val publicKeyString = encryptedSharedPreferences.getString(label+PublicKey.encryptedPrefsLabel, null)
+        // FIXME: Ignoring provided label
+        val publicKeyString = encryptedSharedPreferences.getString(PublicKey.encryptedPrefsLabel, null)
         if (publicKeyString == null) {
             println("Failed to retrieve a public key from encrypted shared preferences with provided label: $label")
             return null
@@ -83,22 +97,26 @@ class Keychain
     }
 
     fun deleteKey(label: String) {
+        // FIXME: Ignoring provided label
         encryptedSharedPreferences
             .edit()
-            .remove(label+PrivateKey.encryptedPrefsLabel)
-            .remove(label+PublicKey.encryptedPrefsLabel)
+            .remove(PrivateKey.encryptedPrefsLabel)
+            .remove(PublicKey.encryptedPrefsLabel)
             .apply()
     }
 
     fun retrieveOrGeneratePrivateKey(label: String, type: KeyType): PrivateKey?
     {
-        val retrieveResult = retrievePrivateKey(label+PrivateKey.encryptedPrefsLabel, type)
+        // FIXME: Ignoring provided label
+        val retrieveResult = retrievePrivateKey(PrivateKey.encryptedPrefsLabel, type)
         if (retrieveResult != null)
         {
+            println("Retrieved a SAVED private key.")
             return  retrieveResult
         }
         else
         {
+            println("Generating a NEW private key.")
             val keyPair = generateEphemeralKeypair(type)
 
             if (keyPair != null)
@@ -114,11 +132,28 @@ class Keychain
     {
         val privateKeyString = keyPair.privateKey.toKeychainString()
         val publicKeyString = keyPair.publicKey.toKeychainString()
-        encryptedSharedPreferences
-            .edit()
-            .putString(label+PrivateKey.encryptedPrefsLabel, privateKeyString)
-            .putString(label+PublicKey.encryptedPrefsLabel, publicKeyString)
-            .apply()
+        //FIXME: Ignoring provided label
+        val keysSaved = encryptedSharedPreferences.edit().apply {
+            putString(PrivateKey.encryptedPrefsLabel, privateKeyString)
+            putString(PublicKey.encryptedPrefsLabel, publicKeyString)
+        }.commit()
+
+        if (keysSaved)
+        {
+            println("KEYPAIR SAVED")
+            println("Saved Private: $privateKeyString")
+            println("Saved Public: $publicKeyString")
+        }
+        else
+        {
+            println("KEYPAIR NOT SAVED")
+
+        }
+//        encryptedSharedPreferences
+//            .edit()
+//            .putString(label+PrivateKey.encryptedPrefsLabel, privateKeyString)
+//            .putString(label+PublicKey.encryptedPrefsLabel, publicKeyString)
+//            .apply()
         return true
     }
 
@@ -128,6 +163,9 @@ class Keychain
         val keyPairGenerator = KeyPairGenerator.getInstance(ecAlgorithm, BouncyCastleProvider())
         keyPairGenerator.initialize(parameterSpec)
         val javaKeyPair = keyPairGenerator.generateKeyPair()
+        println("GENERATED A JAVA KEYPAIR")
+        println("Private key encoded is ${javaKeyPair.private.encoded.size} bytes.")
+        println("Public key encoded is ${javaKeyPair.public.encoded.size} bytes.")
         val keychainPrivateKey = PrivateKey.P256KeyAgreement(javaKeyPair.private, javaKeyPair.public)
         val keychainPublicKey = PublicKey.P256KeyAgreement(javaKeyPair.public)
         return KeyPair(keychainPrivateKey, keychainPublicKey)

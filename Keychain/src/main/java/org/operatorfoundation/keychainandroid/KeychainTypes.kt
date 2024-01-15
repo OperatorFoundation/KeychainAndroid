@@ -1,12 +1,14 @@
 package org.operatorfoundation.keychainandroid
 
-import android.util.Base64
+//import android.util.Base64
 import kotlinx.serialization.Serializable
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey
 import org.bouncycastle.jce.ECNamedCurveTable
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.jce.spec.ECParameterSpec
+import org.bouncycastle.jce.spec.ECPrivateKeySpec
 import org.bouncycastle.jce.spec.ECPublicKeySpec
+import org.bouncycastle.util.encoders.Base64
 import java.security.KeyFactory
 import java.security.NoSuchAlgorithmException
 import java.security.Signature
@@ -65,15 +67,18 @@ sealed class PrivateKey(val javaPrivateKey: java.security.PrivateKey, val javaPu
 
         fun keychainStringToJavaPrivateKey(keychainString: String): java.security.PrivateKey
         {
-            val keychainBytes = Base64.decode(keychainString, Base64.DEFAULT)
+//            val keychainBytes = Base64.decode(keychainString, Base64.DEFAULT)
+            val keychainBytes = Base64.decode(keychainString)
             return keychainBytesToJavaPrivateKey(keychainBytes)
         }
 
         fun keychainBytesToJavaPrivateKey(bytes: ByteArray): java.security.PrivateKey
         {
-            println("keychainBytesToJavaPrivateKey: " + bytes.toHex())
+//            println("keychainBytesToJavaPrivateKey: " + bytes.toHex())
+            println("keychainBytesToJavaPrivateKey(): received (asBase64): ${Base64.toBase64String(bytes)}")
             if (bytes.size != Keychain.privateKeySize)
             {
+                println("keychainBytesToJavaPrivateKey(): provided ${bytes.size}, expected ${Keychain.privateKeySize}")
                 throw InvalidKeySpecException()
             }
 
@@ -109,13 +114,17 @@ sealed class PrivateKey(val javaPrivateKey: java.security.PrivateKey, val javaPu
     {
         val privateKey = this.javaPrivateKey
         val privateKeyBytes = privateKey.encoded
-        return Base64.encodeToString(privateKeyBytes, Base64.DEFAULT)
+        val privateKeyString = Base64.toBase64String(privateKeyBytes)
+//        val privateKeyString = Base64.encodeToString(privateKeyBytes, Base64.DEFAULT)
+        return privateKeyString
     }
 
     fun toKeychainString(): String
     {
         val keyTypeBytes = this.type.toByteArray()
-        return Base64.encodeToString(keyTypeBytes + this.javaPrivateKey.encoded, Base64.DEFAULT)
+        val keychainKeyString = Base64.toBase64String(keyTypeBytes + this.javaPrivateKey.encoded)
+//        val keychainKeyString = Base64.encodeToString(keyTypeBytes + this.javaPrivateKey.encoded, Base64.DEFAULT)
+        return keychainKeyString
     }
 
     fun signatureForData(data: ByteArray): org.operatorfoundation.keychainandroid.Signature
@@ -181,7 +190,9 @@ sealed class PublicKey(val javaPublicKey: java.security.PublicKey)
         @Throws(NoSuchAlgorithmException::class, InvalidKeySpecException::class)
         fun keychainStringToJavaPublicKey(keychainString: String): java.security.PublicKey
         {
-            val keychainBytes = Base64.decode(keychainString, Base64.DEFAULT)
+            val keychainBytes = Base64.decode(keychainString)
+//            val keychainBytes = Base64.decode(keychainString, Base64.DEFAULT)
+
             return keychainBytesToJavaPublicKey(keychainBytes)
         }
 
@@ -209,13 +220,16 @@ sealed class PublicKey(val javaPublicKey: java.security.PublicKey)
             val bcecPublicKey = pubKey as BCECPublicKey
             val point = bcecPublicKey.q
             val encodedPoint = point.getEncoded(false)
-            println("encoded point hex: ${encodedPoint.toHex()}")
+//            println("encoded point (as hex): \n${encodedPoint.toHex()}")
+            println("encoded point (as Base64): ${org.bouncycastle.util.encoders.Base64.toBase64String(encodedPoint)}")
 
             val keyTypeBytes = byteArrayOf(keyType.value.toByte())
-            println("adding identifier byte to key!")
 
             // Add our key type to the beginning of the key bytes (without replacing anything)
-            return keyTypeBytes + encodedPoint
+            val keyBytes = keyTypeBytes + encodedPoint
+            println("javaPublicKeyToKeychainBytes result (as Base64): ${org.bouncycastle.util.encoders.Base64.toBase64String(keyBytes)}")
+
+            return keyBytes
         }
     }
 
@@ -236,7 +250,8 @@ sealed class PublicKey(val javaPublicKey: java.security.PublicKey)
 
     fun toKeychainString(): String
     {
-        return Base64.encodeToString(this.data, Base64.DEFAULT)
+//        return Base64.encodeToString(this.data, Base64.DEFAULT)
+        return org.bouncycastle.util.encoders.Base64.toBase64String(this.data)
     }
 
     // this encodes a public key in a way that can be decoded back into a public key
@@ -247,7 +262,11 @@ sealed class PublicKey(val javaPublicKey: java.security.PublicKey)
         val encodedPoint = point.getEncoded(true)
         val result = ByteArray(33)
         System.arraycopy(encodedPoint, 1, result, 0, 32)
-        return Base64.encodeToString(result, Base64.DEFAULT)
+        val encodedString = Base64.toBase64String(result)
+//        val encodedString = Base64.encodeToString(result, Base64.DEFAULT)
+        println("PublicKey encodedToString() result: $encodedString")
+
+        return encodedString
     }
 
     // toString is normally used for debugging.  Call encodeToString for a properly formatted string representation
