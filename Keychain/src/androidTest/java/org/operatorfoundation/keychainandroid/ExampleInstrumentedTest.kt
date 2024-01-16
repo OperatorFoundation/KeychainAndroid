@@ -34,7 +34,6 @@ class ExampleInstrumentedTest {
     @Test
     fun testJSONSerializePublicKey()
     {
-        // FIXME: Failing to encode correctly
         val keypair = Keychain(appContext).generateAndSaveKeyPair("keychaintest", KeyType.P256KeyAgreement)
         assertNotNull(keypair)
         val privateKeyA = keypair!!.privateKey

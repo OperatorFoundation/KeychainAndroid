@@ -29,7 +29,6 @@ class Keychain(context: Context)
 
         // Keychain format key size in bytes
         val publicKeySize = 66
-        val privateKeySize = 33
     }
 
     fun generateEphemeralKeypair(type: KeyType): KeyPair?
@@ -38,7 +37,6 @@ class Keychain(context: Context)
         {
             when(type)
             {
-                // FIXME: Differences in generating these types
                 KeyType.P256KeyAgreement -> generateP256KeyPair()
                 KeyType.P256Signing -> generateP256KeyPair()
             }
@@ -65,8 +63,7 @@ class Keychain(context: Context)
 
     fun retrievePrivateKey(label: String, type: KeyType): PrivateKey?
     {
-        // FIXME: Ignoring provided label
-        val privateKeyString = encryptedSharedPreferences.getString(PrivateKey.encryptedPrefsLabel, null)
+        val privateKeyString = encryptedSharedPreferences.getString(label+PrivateKey.encryptedPrefsLabel, null)
         if (privateKeyString == null) {
             println("Failed to retrieve a private key from encrypted shared preferences with provided label: $label")
             return null
@@ -74,8 +71,7 @@ class Keychain(context: Context)
         println("Retrieved a private key from storage: $privateKeyString")
         val javaPrivateKey = PrivateKey.keychainStringToJavaPrivateKey(privateKeyString)
 
-        // FIXME: Ignoring provided label
-        val publicKeyString = encryptedSharedPreferences.getString(PublicKey.encryptedPrefsLabel, null)
+        val publicKeyString = encryptedSharedPreferences.getString(label+PublicKey.encryptedPrefsLabel, null)
         if (publicKeyString == null) {
             println("Failed to retrieve a public key from encrypted shared preferences with provided label: $label")
             return null
@@ -96,19 +92,18 @@ class Keychain(context: Context)
         }
     }
 
-    fun deleteKey(label: String) {
-        // FIXME: Ignoring provided label
+    fun deleteKey(label: String)
+    {
         encryptedSharedPreferences
             .edit()
-            .remove(PrivateKey.encryptedPrefsLabel)
-            .remove(PublicKey.encryptedPrefsLabel)
+            .remove(label+PrivateKey.encryptedPrefsLabel)
+            .remove(label+PublicKey.encryptedPrefsLabel)
             .apply()
     }
 
     fun retrieveOrGeneratePrivateKey(label: String, type: KeyType): PrivateKey?
     {
-        // FIXME: Ignoring provided label
-        val retrieveResult = retrievePrivateKey(PrivateKey.encryptedPrefsLabel, type)
+        val retrieveResult = retrievePrivateKey(label, type)
         if (retrieveResult != null)
         {
             println("Retrieved a SAVED private key.")
@@ -132,10 +127,10 @@ class Keychain(context: Context)
     {
         val privateKeyString = keyPair.privateKey.toKeychainString()
         val publicKeyString = keyPair.publicKey.toKeychainString()
-        //FIXME: Ignoring provided label
+
         val keysSaved = encryptedSharedPreferences.edit().apply {
-            putString(PrivateKey.encryptedPrefsLabel, privateKeyString)
-            putString(PublicKey.encryptedPrefsLabel, publicKeyString)
+            putString(label+PrivateKey.encryptedPrefsLabel, privateKeyString)
+            putString(label+PublicKey.encryptedPrefsLabel, publicKeyString)
         }.commit()
 
         if (keysSaved)
@@ -149,11 +144,7 @@ class Keychain(context: Context)
             println("KEYPAIR NOT SAVED")
 
         }
-//        encryptedSharedPreferences
-//            .edit()
-//            .putString(label+PrivateKey.encryptedPrefsLabel, privateKeyString)
-//            .putString(label+PublicKey.encryptedPrefsLabel, publicKeyString)
-//            .apply()
+
         return true
     }
 

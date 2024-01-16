@@ -67,6 +67,7 @@ sealed class PrivateKey(val javaPrivateKey: java.security.PrivateKey, val javaPu
 
         fun keychainStringToJavaPrivateKey(keychainString: String): java.security.PrivateKey
         {
+            // TODO: Verify that this decoder is compatible with swift base64 encoder
 //            val keychainBytes = Base64.decode(keychainString, Base64.DEFAULT)
             val keychainBytes = Base64.decode(keychainString)
             return keychainBytesToJavaPrivateKey(keychainBytes)
@@ -74,22 +75,6 @@ sealed class PrivateKey(val javaPrivateKey: java.security.PrivateKey, val javaPu
 
         fun keychainBytesToJavaPrivateKey(bytes: ByteArray): java.security.PrivateKey
         {
-//            println("keychainBytesToJavaPrivateKey: " + bytes.toHex())
-            println("keychainBytesToJavaPrivateKey(): received (asBase64): ${Base64.toBase64String(bytes)}")
-            if (bytes.size != Keychain.privateKeySize)
-            {
-                println("keychainBytesToJavaPrivateKey(): provided ${bytes.size}, expected ${Keychain.privateKeySize}")
-                throw InvalidKeySpecException()
-            }
-
-//                val keyFactory = KeyFactory.getInstance(ecAlgorithm, BouncyCastleProvider())
-//                val privateKeyBytesWithType = Base64.decode(privateKeyString, Base64.DEFAULT)
-//                val privateKeyBytes = privateKeyBytesWithType.sliceArray(1..32)
-//                val privateKeySpec = PKCS8EncodedKeySpec(privateKeyBytes)
-//                val privateKey = keyFactory.generatePrivate(privateKeySpec)
-//
-//                PrivateKey.P256KeyAgreement(privateKey)
-            // TODO: Test for correctness
             val keyFactory = KeyFactory.getInstance(Keychain.ecAlgorithm, BouncyCastleProvider())
             val privateKeyBytes = bytes.sliceArray(1 until bytes.size) // Remove our custom key type byte from the front
             val privateKeySpec = PKCS8EncodedKeySpec(privateKeyBytes)
