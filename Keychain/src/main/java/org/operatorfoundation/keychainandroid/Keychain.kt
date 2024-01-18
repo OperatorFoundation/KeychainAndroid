@@ -1,33 +1,44 @@
 package org.operatorfoundation.keychainandroid
 
-import android.util.Base64
+import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import org.bouncycastle.jce.ECNamedCurveTable
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.*
-import java.security.spec.PKCS8EncodedKeySpec
 import javax.crypto.KeyAgreement
 
-class Keychain
+class Keychain(context: Context)
 {
-    // FIXME: This is not being initialized and will cause an exception when it is accessed.
-    lateinit var encryptedSharedPreferences: EncryptedSharedPreferences
+    private val masterKey = MasterKey.Builder(context.applicationContext)
+        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+        .build()
 
-    fun generateEphemeralKeypair(type: KeyType): KeyPair? {
-        return try {
-            return if (type == KeyType.P256KeyAgreement) {
-                val parameterSpec = ECNamedCurveTable.getParameterSpec("secp256r1")
-                val keyPairGenerator = KeyPairGenerator.getInstance("EC", BouncyCastleProvider())
-                keyPairGenerator.initialize(parameterSpec)
-                val keyPair = keyPairGenerator.generateKeyPair()
-                val privateKey = keyPair.private
-                val publicKey = keyPair.public
-                val keychainPrivateKey = PrivateKey.P256KeyAgreement(privateKey)
-                val keychainPublicKey = PublicKey.P256KeyAgreement(publicKey)
-                KeyPair(keychainPrivateKey, keychainPublicKey)
-            } else {
-                println("Unsupported key type.  Returning null.")
-                null
+    val encryptedSharedPreferences = EncryptedSharedPreferences.create(
+        context.applicationContext,
+        "KeychainEncryptedPreferences",
+        masterKey,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM)
+
+    companion object
+    {
+        val ecAlgorithm = "EC"
+        val ecdhAlgorithm = "ECDH"
+        val secp256r1Algorithm = "secp256r1"
+
+        // Keychain format key size in bytes
+        val publicKeySize = 66
+    }
+
+    fun generateEphemeralKeypair(type: KeyType): KeyPair?
+    {
+        return try
+        {
+            when(type)
+            {
+                KeyType.P256KeyAgreement -> generateP256KeyPair()
+                KeyType.P256Signing -> generateP256KeyPair()
             }
         } catch (e: NoSuchAlgorithmException) {
             e.printStackTrace()
@@ -38,85 +49,117 @@ class Keychain
         }
     }
 
-    fun generateAndSavePrivateKey(label: String, type: KeyType): PrivateKey? {
-        return try {
-            return if (type == KeyType.P256KeyAgreement) {
-                val parameterSpec = ECNamedCurveTable.getParameterSpec("secp256r1")
-                val keyPairGenerator = KeyPairGenerator.getInstance("EC", BouncyCastleProvider())
-                keyPairGenerator.initialize(parameterSpec)
-                val privateKey = keyPairGenerator.generateKeyPair().private
-                storePrivateKey(PrivateKey.P256KeyAgreement(privateKey), label)
-                PrivateKey.P256KeyAgreement(privateKey)
-            } else {
-                println("Unsupported key type.  Returning null.")
-                null
-            }
-        } catch (e: NoSuchAlgorithmException) {
-            e.printStackTrace()
-            null
-        } catch (e: InvalidAlgorithmParameterException) {
-            e.printStackTrace()
-            null
+    fun generateAndSaveKeyPair(label: String, type: KeyType): KeyPair?
+    {
+        val keyPair = generateEphemeralKeypair(type)
+
+        if (keyPair != null)
+        {
+            storeKeyPair(keyPair, label)
         }
+
+        return keyPair
     }
 
-    fun retrievePrivateKey(label: String, type: KeyType): PrivateKey? {
-        val privateKeyString = encryptedSharedPreferences.getString(label, null)
+    fun retrievePrivateKey(label: String, type: KeyType): PrivateKey?
+    {
+        val privateKeyString = encryptedSharedPreferences.getString(label+PrivateKey.encryptedPrefsLabel, null)
         if (privateKeyString == null) {
-            println("Could not find private key with provided label: $label")
+            println("Failed to retrieve a private key from encrypted shared preferences with provided label: $label")
             return null
         }
-        return if (type == KeyType.P256KeyAgreement) {
-            val keyFactory = KeyFactory.getInstance("EC", BouncyCastleProvider())
-            val privateKeyBytesWithType = Base64.decode(privateKeyString, Base64.DEFAULT)
-            val privateKeyBytes = privateKeyBytesWithType.sliceArray(1..32)
-            val spec = PKCS8EncodedKeySpec(privateKeyBytes)
-            val privateKey = keyFactory.generatePrivate(spec)
-            PrivateKey.P256KeyAgreement(privateKey)
-        } else {
-            println("Unsupported key type.  Returning null.")
-            null
+        println("Retrieved a private key from storage: $privateKeyString")
+        val javaPrivateKey = PrivateKey.keychainStringToJavaPrivateKey(privateKeyString)
+
+        val publicKeyString = encryptedSharedPreferences.getString(label+PublicKey.encryptedPrefsLabel, null)
+        if (publicKeyString == null) {
+            println("Failed to retrieve a public key from encrypted shared preferences with provided label: $label")
+            return null
         }
-    }
+        val javaPublicKey = PublicKey.keychainStringToJavaPublicKey(publicKeyString)
 
-    fun deleteKey(label: String) {
-        encryptedSharedPreferences
-            .edit()
-            .remove(label)
-            .apply()
-    }
+        when (type)
+        {
+            KeyType.P256KeyAgreement ->
+            {
+                return PrivateKey.P256KeyAgreement(javaPrivateKey, javaPublicKey)
+            }
 
-    fun retrieveOrGeneratePrivateKey(label: String, type: KeyType): PrivateKey? {
-        val retrieveResult = retrievePrivateKey(label, type)
-        return if (retrieveResult != null) {
-            retrieveResult
-        } else {
-            return if (type == KeyType.P256KeyAgreement) {
-                val parameterSpec = ECNamedCurveTable.getParameterSpec("secp256r1")
-                val keyPairGenerator = KeyPairGenerator.getInstance("EC", BouncyCastleProvider())
-                keyPairGenerator.initialize(parameterSpec)
-                val privateKey = keyPairGenerator.generateKeyPair().private
-                PrivateKey.P256KeyAgreement(privateKey)
-            } else {
-                null
+            KeyType.P256Signing ->
+            {
+                return PrivateKey.P256Signing(javaPrivateKey, javaPublicKey)
             }
         }
     }
 
-    fun storePrivateKey(key: PrivateKey, label: String): Boolean {
-        val privateKey = when(key) {
-            is PrivateKey.P256KeyAgreement -> key.javaPrivateKey
-            else -> null
-        } ?: return false
-
-        // TODO: Verify that .encoded is correct
-        val keyType = byteArrayOf(KeyType.P256KeyAgreement.value.toByte())
-        val privateKeyString = Base64.encodeToString(keyType + privateKey.encoded, Base64.DEFAULT)
+    fun deleteKey(label: String)
+    {
         encryptedSharedPreferences
             .edit()
-            .putString(label, privateKeyString)
+            .remove(label+PrivateKey.encryptedPrefsLabel)
+            .remove(label+PublicKey.encryptedPrefsLabel)
             .apply()
+    }
+
+    fun retrieveOrGeneratePrivateKey(label: String, type: KeyType): PrivateKey?
+    {
+        val retrieveResult = retrievePrivateKey(label, type)
+        if (retrieveResult != null)
+        {
+            println("Retrieved a SAVED private key.")
+            return  retrieveResult
+        }
+        else
+        {
+            println("Generating a NEW private key.")
+            val keyPair = generateEphemeralKeypair(type)
+
+            if (keyPair != null)
+            {
+                storeKeyPair(keyPair, label)
+            }
+
+            return keyPair?.privateKey
+        }
+    }
+
+    fun storeKeyPair(keyPair: KeyPair, label: String): Boolean
+    {
+        val privateKeyString = keyPair.privateKey.toKeychainString()
+        val publicKeyString = keyPair.publicKey.toKeychainString()
+
+        val keysSaved = encryptedSharedPreferences.edit().apply {
+            putString(label+PrivateKey.encryptedPrefsLabel, privateKeyString)
+            putString(label+PublicKey.encryptedPrefsLabel, publicKeyString)
+        }.commit()
+
+        if (keysSaved)
+        {
+            println("KEYPAIR SAVED")
+            println("Saved Private: $privateKeyString")
+            println("Saved Public: $publicKeyString")
+        }
+        else
+        {
+            println("KEYPAIR NOT SAVED")
+
+        }
+
         return true
+    }
+
+    fun generateP256KeyPair(): KeyPair
+    {
+        val parameterSpec = ECNamedCurveTable.getParameterSpec(secp256r1Algorithm)
+        val keyPairGenerator = KeyPairGenerator.getInstance(ecAlgorithm, BouncyCastleProvider())
+        keyPairGenerator.initialize(parameterSpec)
+        val javaKeyPair = keyPairGenerator.generateKeyPair()
+        println("GENERATED A JAVA KEYPAIR")
+        println("Private key encoded is ${javaKeyPair.private.encoded.size} bytes.")
+        println("Public key encoded is ${javaKeyPair.public.encoded.size} bytes.")
+        val keychainPrivateKey = PrivateKey.P256KeyAgreement(javaKeyPair.private, javaKeyPair.public)
+        val keychainPublicKey = PublicKey.P256KeyAgreement(javaKeyPair.public)
+        return KeyPair(keychainPrivateKey, keychainPublicKey)
     }
 
     fun ecdh(privateKey: PrivateKey?, publicKey: PublicKey?): SymmetricKey?
@@ -128,10 +171,10 @@ class Keychain
                     when(publicKey) {
                         is PublicKey.P256KeyAgreement -> {
                             val keyAgreement =
-                                KeyAgreement.getInstance("ECDH", BouncyCastleProvider())
+                                KeyAgreement.getInstance(ecdhAlgorithm, BouncyCastleProvider())
                             keyAgreement.init(privateKey.javaPrivateKey)
                             keyAgreement.doPhase(publicKey.javaPublicKey, true)
-                            val secret = keyAgreement.generateSecret("secp256r1")
+                            val secret = keyAgreement.generateSecret(secp256r1Algorithm)
                             SymmetricKey(secret)
                         }
                         else -> null
