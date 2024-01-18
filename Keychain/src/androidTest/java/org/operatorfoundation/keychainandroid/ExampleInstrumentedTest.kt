@@ -92,6 +92,8 @@ class ExampleInstrumentedTest {
         Assert.assertNotNull(keyPair)
         val privateKeyString = keyPair!!.privateKey.toKeychainString()
         println("privateKeyString: $privateKeyString")
-    }
 
+        val publicKeyString = keyPair!!.publicKey.toKeychainString()
+        println("publicKeyString: $publicKeyString")
+    }
 }

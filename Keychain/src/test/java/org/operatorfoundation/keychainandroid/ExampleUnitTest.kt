@@ -1,5 +1,6 @@
 package org.operatorfoundation.keychainandroid
 
+import org.bouncycastle.util.encoders.Base64
 import org.junit.Assert
 import org.junit.Test
 import java.io.ByteArrayInputStream
@@ -7,27 +8,8 @@ import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 
-class ExampleUnitTest {
-//    @Test
-//    fun testSerializeKeyPair()
-//    {
-//        val keyPair = Keychain().generateEphemeralKeypair(KeyType.P256KeyAgreement)
-//
-//        Assert.assertNotNull(keyPair)
-//
-//        val bos = ByteArrayOutputStream()
-//        val oos = ObjectOutputStream(bos)
-//        val bytes = bos.toByteArray()
-//        val bis = ByteArrayInputStream(bytes)
-//        val ois = ObjectInputStream(bis)
-//
-//        oos.writeObject(keyPair!!.publicKey)
-//        oos.flush()
-//
-//        val clone = ois.readObject() as PublicKey
-//        println(clone.encodeToString())
-//    }
-
+class ExampleUnitTest
+{
     @Test
     fun testSignatureTypeFromByteArray()
     {
@@ -36,5 +18,24 @@ class ExampleUnitTest {
         val signatureTypeControl = SignatureType.P256
 
         Assert.assertEquals(signatureTypeFromData, signatureTypeControl)
+    }
+
+    @Test
+    fun testBase64EncodingSwiftCompatibility()
+    {
+        val swiftBase64String = "AgIC"
+        val bytes = byteArrayOf(2, 2, 2)
+        val base64String = Base64.toBase64String(bytes)
+
+        println("base64String: $base64String")
+
+        assert(swiftBase64String == base64String)
+    }
+
+    @Test
+    fun testKeychainPublicKeySwiftCompatibility()
+    {
+        val swiftPublicKeyKeychainString = "AgT6QS816nOuLbY96P+yznkZ8ZJQGzlAXTQOp4cJjzounSGBdS6YnoNhyuLnrdpRURExpKCZ+KfXptYZPo8ANL+D"
+        val keychainPublicKey = PublicKey.new(swiftPublicKeyKeychainString)
     }
 }

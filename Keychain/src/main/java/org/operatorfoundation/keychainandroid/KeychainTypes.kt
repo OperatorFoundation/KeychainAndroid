@@ -100,7 +100,6 @@ sealed class PrivateKey(val javaPrivateKey: java.security.PrivateKey, val javaPu
         val privateKey = this.javaPrivateKey
         val privateKeyBytes = privateKey.encoded
         val privateKeyString = Base64.toBase64String(privateKeyBytes)
-//        val privateKeyString = Base64.encodeToString(privateKeyBytes, Base64.DEFAULT)
         return privateKeyString
     }
 
@@ -108,7 +107,6 @@ sealed class PrivateKey(val javaPrivateKey: java.security.PrivateKey, val javaPu
     {
         val keyTypeBytes = this.type.toByteArray()
         val keychainKeyString = Base64.toBase64String(keyTypeBytes + this.javaPrivateKey.encoded)
-//        val keychainKeyString = Base64.encodeToString(keyTypeBytes + this.javaPrivateKey.encoded, Base64.DEFAULT)
         return keychainKeyString
     }
 
@@ -172,11 +170,16 @@ sealed class PublicKey(val javaPublicKey: java.security.PublicKey)
             }
         }
 
+        fun new(keychainString: String): PublicKey
+        {
+            val keychainBytes = Base64.decode(keychainString)
+            return new(keychainBytes)
+        }
+
         @Throws(NoSuchAlgorithmException::class, InvalidKeySpecException::class)
         fun keychainStringToJavaPublicKey(keychainString: String): java.security.PublicKey
         {
             val keychainBytes = Base64.decode(keychainString)
-//            val keychainBytes = Base64.decode(keychainString, Base64.DEFAULT)
 
             return keychainBytesToJavaPublicKey(keychainBytes)
         }
@@ -235,8 +238,7 @@ sealed class PublicKey(val javaPublicKey: java.security.PublicKey)
 
     fun toKeychainString(): String
     {
-//        return Base64.encodeToString(this.data, Base64.DEFAULT)
-        return org.bouncycastle.util.encoders.Base64.toBase64String(this.data)
+        return Base64.toBase64String(this.data)
     }
 
     // this encodes a public key in a way that can be decoded back into a public key
@@ -248,7 +250,6 @@ sealed class PublicKey(val javaPublicKey: java.security.PublicKey)
         val result = ByteArray(33)
         System.arraycopy(encodedPoint, 1, result, 0, 32)
         val encodedString = Base64.toBase64String(result)
-//        val encodedString = Base64.encodeToString(result, Base64.DEFAULT)
         println("PublicKey encodedToString() result: $encodedString")
 
         return encodedString
