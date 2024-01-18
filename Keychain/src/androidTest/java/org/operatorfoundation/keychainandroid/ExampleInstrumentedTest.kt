@@ -79,7 +79,8 @@ class ExampleInstrumentedTest {
     @Test
     fun testP256KeyAgreementPublicKeyToString()
     {
-        val keyPair = Keychain(appContext).generateEphemeralKeypair(KeyType.P256KeyAgreement)
+        val keychain = Keychain(appContext)
+        val keyPair = keychain.generateEphemeralKeypair(KeyType.P256KeyAgreement)
         Assert.assertNotNull(keyPair)
         val publicKeyString = keyPair!!.publicKey.toString()
         println("PublicKeyString: $publicKeyString")
@@ -88,7 +89,8 @@ class ExampleInstrumentedTest {
     @Test
     fun testP256KeyAgreementPrivateKeyToKeychainString()
     {
-        val keyPair = Keychain(appContext).generateEphemeralKeypair(KeyType.P256KeyAgreement)
+        val keychain = Keychain(appContext)
+        val keyPair = keychain.generateEphemeralKeypair(KeyType.P256KeyAgreement)
         Assert.assertNotNull(keyPair)
         val privateKeyString = keyPair!!.privateKey.toKeychainString()
         println("privateKeyString: $privateKeyString")
