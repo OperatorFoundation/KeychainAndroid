@@ -16,3 +16,5 @@ local.properties
 .idea/codeStyles/codeStyleConfig.xml
 .idea/codeStyles/Project.xml
 .idea/migrations.xml
+.idea/androidTestResultsUserPreferences.xml
+.idea/deploymentTargetDropDown.xml
