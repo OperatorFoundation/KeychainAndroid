@@ -135,6 +135,7 @@ sealed class PrivateKey(val javaPrivateKey: java.security.PrivateKey, val javaPu
         {
             val bigIntBytes = bigInt.toByteArray()
             println(">>>> bigIntBytes size: ${bigIntBytes.size}")
+            println(">>>> bigIntBytes hex: ${bigIntBytes.toHex()}")
             byteBuffer.put(bigIntBytes)
         }
         byteBuffer.flip()
