@@ -130,14 +130,15 @@ sealed class PrivateKey(val javaPrivateKey: java.security.PrivateKey, val javaPu
         val signature =  signer.generateSignature(hash)
         // FIXME: Find out how many bytes we actually need to allocate
         val byteBuffer = ByteBuffer.allocate(1024)
+        println(">>>> Signature size: ${signature.size}")
         for (bigInt in signature)
         {
             val bigIntBytes = bigInt.toByteArray()
+            println(">>>> bigIntBytes size: ${bigIntBytes.size}")
             byteBuffer.put(bigIntBytes)
         }
         byteBuffer.flip()
         val signedData = byteBuffer.array()
-        println(">>>> signatureForData bytes: $signedData")
         println(">>>> signatureForData bytes size: ${signedData.size}")
 
         when(this)
