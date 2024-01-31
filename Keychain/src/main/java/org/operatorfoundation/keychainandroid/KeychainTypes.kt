@@ -2,6 +2,10 @@ package org.operatorfoundation.keychainandroid
 
 //import android.util.Base64
 import kotlinx.serialization.Serializable
+import org.bouncycastle.crypto.params.ECDomainParameters
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters
+import org.bouncycastle.crypto.signers.ECDSASigner
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey
 import org.bouncycastle.jce.ECNamedCurveTable
 import org.bouncycastle.jce.provider.BouncyCastleProvider
@@ -9,6 +13,7 @@ import org.bouncycastle.jce.spec.ECParameterSpec
 import org.bouncycastle.jce.spec.ECPrivateKeySpec
 import org.bouncycastle.jce.spec.ECPublicKeySpec
 import org.bouncycastle.util.encoders.Base64
+import java.nio.ByteBuffer
 import java.security.KeyFactory
 import java.security.NoSuchAlgorithmException
 import java.security.Signature
@@ -113,10 +118,24 @@ sealed class PrivateKey(val javaPrivateKey: java.security.PrivateKey, val javaPu
     fun signatureForData(data: ByteArray): org.operatorfoundation.keychainandroid.Signature
     {
         val privateKey = this.javaPrivateKey
-        val signer = Signature.getInstance("SHA256withECDSA", BouncyCastleProvider())
-        signer.initSign(privateKey)
-        signer.update(data)
-        val signedData = signer.sign()
+        val bcecPrivateKey = privateKey as BCECPrivateKey
+        val point = bcecPrivateKey.d
+        val signer = ECDSASigner()
+        val ecDomainParameters = ECDomainParameters(bcecPrivateKey.parameters.curve, bcecPrivateKey.parameters.g, bcecPrivateKey.parameters.h, bcecPrivateKey.parameters.n)
+        val parameters = ECPrivateKeyParameters(point, ecDomainParameters)
+        signer.init(true, parameters)
+        val signature =  signer.generateSignature(data)
+        // FIXME: Find out how many bytes we actually need to allocate
+        val byteBuffer = ByteBuffer.allocate(1024)
+        for (bigInt in signature)
+        {
+            val bigIntBytes = bigInt.toByteArray()
+            byteBuffer.put(bigIntBytes)
+        }
+        byteBuffer.flip()
+        val signedData = byteBuffer.array()
+        println(">>>> signatureForData bytes: $signedData")
+        println(">>>> signatureForData bytes size: ${signedData.size}")
 
         when(this)
         {
