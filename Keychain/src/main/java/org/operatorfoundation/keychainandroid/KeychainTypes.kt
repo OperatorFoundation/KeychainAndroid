@@ -121,7 +121,7 @@ sealed class PrivateKey(val javaPrivateKey: java.security.PrivateKey, val javaPu
         val bcecPrivateKey = privateKey as BCECPrivateKey
         val point = bcecPrivateKey.d
         val signer = ECDSASigner()
-        val ecDomainParameters = ECDomainParameters(bcecPrivateKey.parameters.curve, bcecPrivateKey.parameters.g, bcecPrivateKey.parameters.h, bcecPrivateKey.parameters.n)
+        val ecDomainParameters = ECDomainParameters(bcecPrivateKey.parameters.curve, bcecPrivateKey.parameters.g, bcecPrivateKey.parameters.n, bcecPrivateKey.parameters.h)
         val parameters = ECPrivateKeyParameters(point, ecDomainParameters)
         signer.init(true, parameters)
         val signature =  signer.generateSignature(data)
