@@ -136,9 +136,16 @@ sealed class PrivateKey(val javaPrivateKey: java.security.PrivateKey, val javaPu
             val bigIntBytes = bigInt.toByteArray()
             println(">>>> bigIntBytes size: ${bigIntBytes.size}")
             println(">>>> bigIntBytes hex: ${bigIntBytes.toHex()}")
-            val zero = 0
-            assert(bigIntBytes[0] == zero.toByte())
-            byteBuffer.put(bigIntBytes.sliceArray(1 until bigIntBytes.size))
+            if (bigIntBytes.size == 33)
+            {
+                val zero = 0
+                assert(bigIntBytes[0] == zero.toByte())
+                byteBuffer.put(bigIntBytes.sliceArray(1 until bigIntBytes.size))
+            }
+            else
+            {
+                byteBuffer.put(bigIntBytes)
+            }
         }
         byteBuffer.flip()
         val signedData = byteBuffer.array()
