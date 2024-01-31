@@ -15,6 +15,7 @@ import org.bouncycastle.jce.spec.ECPublicKeySpec
 import org.bouncycastle.util.encoders.Base64
 import java.nio.ByteBuffer
 import java.security.KeyFactory
+import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.security.Signature
 import java.security.spec.InvalidKeySpecException
@@ -124,7 +125,9 @@ sealed class PrivateKey(val javaPrivateKey: java.security.PrivateKey, val javaPu
         val ecDomainParameters = ECDomainParameters(bcecPrivateKey.parameters.curve, bcecPrivateKey.parameters.g, bcecPrivateKey.parameters.n, bcecPrivateKey.parameters.h)
         val parameters = ECPrivateKeyParameters(point, ecDomainParameters)
         signer.init(true, parameters)
-        val signature =  signer.generateSignature(data)
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hash = digest.digest(data)
+        val signature =  signer.generateSignature(hash)
         // FIXME: Find out how many bytes we actually need to allocate
         val byteBuffer = ByteBuffer.allocate(1024)
         for (bigInt in signature)
