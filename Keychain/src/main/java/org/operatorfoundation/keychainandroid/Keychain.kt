@@ -38,7 +38,7 @@ class Keychain(context: Context)
             when(type)
             {
                 KeyType.P256KeyAgreement -> generateP256KeyPair()
-                KeyType.P256Signing -> generateP256KeyPair()
+                KeyType.P256Signing -> generateP256SigningKeypair()
             }
         } catch (e: NoSuchAlgorithmException) {
             e.printStackTrace()
@@ -47,6 +47,20 @@ class Keychain(context: Context)
             e.printStackTrace()
             null
         }
+    }
+
+    fun generateP256SigningKeypair(): KeyPair
+    {
+        val parameterSpec = ECNamedCurveTable.getParameterSpec(secp256r1Algorithm)
+        val keyPairGenerator = KeyPairGenerator.getInstance(ecAlgorithm, BouncyCastleProvider())
+        keyPairGenerator.initialize(parameterSpec)
+        val javaKeyPair = keyPairGenerator.generateKeyPair()
+        println("GENERATED A JAVA KEYPAIR")
+        println("Private key encoded is ${javaKeyPair.private.encoded.size} bytes.")
+        println("Public key encoded is ${javaKeyPair.public.encoded.size} bytes.")
+        val keychainPrivateKey = PrivateKey.P256Signing(javaKeyPair.private, javaKeyPair.public)
+        val keychainPublicKey = PublicKey.P256Signing(javaKeyPair.public)
+        return KeyPair(keychainPrivateKey, keychainPublicKey)
     }
 
     fun generateAndSaveKeyPair(label: String, type: KeyType): KeyPair?
